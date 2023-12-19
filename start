@@ -1,0 +1,59 @@
+#!/bin/bash -
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NO_COL='\033[0m'
+
+#  Verifica se o terminal já está configurado para o ROS2
+#+ Se estiver, termina o script.
+if [[ "$PS1" =~ "ros" ]]; then
+	printf "start: ${RED}\tAmbiente já está configurado para rodar o ROS.${NO_COL}\n"
+	printf "\tCaso esteja com problemas, inicie outro shell\n"
+	printf "\te execute ${RED}'source start'${NO_COL} no workspace do ROS.\n\n"
+  return
+fi
+
+printf "start:\tIniciando ambiente para o ROS2\n"
+# Workspace do ROS2
+ROS_WS=~/lab5
+
+#  O Workspace do ROS está em outro diretório? Atualiza o ROS_WS com
+#+ a variável de ambiente $ROS_PATH
+if [[ -n "${ROS_PATH}" ]]; then
+	printf "\tROS_PATH modificado para ${ROS_PATH}\n"
+	ROS_WS=$ROS_PATH
+else
+	printf "\t\e[4mROS_PATH padrão: ${ROS_WS}\e[0m\n"
+fi
+
+move_to() {
+    local x="$1"
+    local y="$2"
+    local theta="$3"
+
+    ros2 topic pub /goal geometry_msgs/msg/Pose2D "{x: $x, y: $y, theta: $theta}"
+}
+
+## Ativa o ambiente do ROS
+source /opt/ros/humble/setup.bash
+
+## Configura o ambiente do Gazebo
+source /usr/share/gazebo/setup.bash
+
+# Modelo do Turtlebot usado
+export TURTLEBOT3_MODEL=waffle
+
+# Modelos para importação pelo Gazebo
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/humble/share/turtlebot3_gazebo/models
+
+# Diferencia o terminal com ROS2 ativo
+PS1="[ros2]"$PS1
+
+alias spawn_turtle='cd ${ROS_WS};source ${ROS_WS}/install/setup.bash;ros2 run turtlesim turtlesim_node'
+alias lab5_control='cd ${ROS_WS};source ${ROS_WS}/install/setup.bash;ros2 run turtle_control_lvn turtle_control'
+alias turtle_goal='cd ${ROS_WS};source ${ROS_WS}/install/setup.bash;ros2 run turtle_control_lvn turtle_goal'
+# Build com link simbólico
+alias colcon_build_sym='colcon build --symlink-install'
+
+# Tudo configurado
+printf "${GREEN}Ambiente para o ROS2 ativo.${NO_COL}\n\n"
